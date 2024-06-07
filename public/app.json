@@ -13,7 +13,7 @@
         "description": "The primary app for professionals to access guided meditation sessions.",
         "appId": "IOTrix_Professional",
         "childAppIds": [
-            "IOTrix_Manager"
+            "IOTrix_Manager","IOTrix_Managr","IOTrix_Masdager"
         ],
         "name": "IOTrix Professional",
         "index": 0
@@ -57,5 +57,47 @@
         "isPrimary": false,
         "index": 1,
         "appId": "IOTrix_Manager"
+    },
+    {
+        "description": "An app for managers to schedule and monitor team meditation breaks.",
+        "actor": "Manager",
+        "childAppIds": [
+            "IOTrix_HR"
+        ],
+        "createdAt": {
+            "seconds": 1716664953,
+            "nanoseconds": 944000000
+        },
+        "id": "b7e0e52e-c479-4b22-bcbe-a679a357b9c0",
+        "name": "IOTrix Manager",
+        "projectId": "w0kSFa2rZ7naF05F2nBR",
+        "parentAppIds": [
+            "IOTrix_Professional"
+        ],
+        "uid": "qzWtwvhGUBWEIVgliGi0Y4XMvSF3",
+        "isPrimary": false,
+        "index": 1,
+        "appId": "IOTrix_Managr"
+    },
+    {
+        "description": "An app for managers to schedule and monitor team meditation breaks.",
+        "actor": "Manager",
+        "childAppIds": [
+            "IOTrix_HR"
+        ],
+        "createdAt": {
+            "seconds": 1716664953,
+            "nanoseconds": 944000000
+        },
+        "id": "b7e0e52e-c479-4b22-bcbe-a679a357b9c0",
+        "name": "IOTrix Manager",
+        "projectId": "w0kSFa2rZ7naF05F2nBR",
+        "parentAppIds": [
+            "IOTrix_Professional"
+        ],
+        "uid": "qzWtwvhGUBWEIVgliGi0Y4XMvSF3",
+        "isPrimary": false,
+        "index": 1,
+        "appId": "IOTrix_Masdager"
     }
 ]

@@ -24,14 +24,23 @@ const getLayoutedElements = (nodes, edges, direction = 'TB') => {
 
   dagre.layout(dagreGraph);
 
+  const positions = new Set();
   nodes.forEach((node) => {
     const nodeWithPosition = dagreGraph.node(node.id);
     node.targetPosition = isHorizontal ? 'left' : 'top';
     node.sourcePosition = isHorizontal ? 'right' : 'bottom';
 
+    let { x, y } = nodeWithPosition;
+    // Adjust position if it overlaps
+    while (positions.has(`${x}-${y}`)) {
+      x += nodeWidth / 2;
+      y += nodeHeight / 2;
+    }
+    positions.add(`${x}-${y}`);
+
     node.position = {
-      x: nodeWithPosition.x - nodeWidth / 2,
-      y: nodeWithPosition.y - nodeHeight / 2,
+      x: x - nodeWidth / 2,
+      y: y - nodeHeight / 2,
     };
 
     return node;
@@ -53,26 +62,37 @@ const App = () => {
         return response.json();
       })
       .then(data => {
-        // Find the primary node
+        // Extract nodes and create a mapping for unique node IDs
+        const newNodes = [];
+        const nodeIdMap = new Map();
+
+        data.forEach((app, index) => {
+          const nodeId = `${app.appId}-${index}`;
+          nodeIdMap.set(app.appId, nodeId);
+          newNodes.push({
+            id: nodeId,
+            data: { label: app.name },
+            position: { x: 0, y: 0 },
+          });
+        });
+
+        // Find the primary node and create edges
         const primaryNode = data.find(app => app.isPrimary);
+        const primaryNodeId = nodeIdMap.get(primaryNode.appId);
+        const newEdges = [];
 
-        // Extract nodes
-        const newNodes = data.map(app => ({
-          id: app.appId,
-          data: { label: app.name },
-          position: { x: 0, y: 0 },
-        }));
-
-        // Extract edges where the primary node is the only parent
-        const newEdges = data
-          .filter(app => !app.isPrimary)
-          .map(app => ({
-            id: `e-${primaryNode.appId}-${app.appId}`,
-            source: primaryNode.appId,
-            target: app.appId,
-            type: 'smoothstep', // Use the 'smoothstep' edge type
-            animated: true, // Set animated to true
-          }));
+        data.forEach(app => {
+          if (!app.isPrimary) {
+            const targetId = nodeIdMap.get(app.appId);
+            newEdges.push({
+              id: `e-${primaryNodeId}-${targetId}`,
+              source: primaryNodeId,
+              target: targetId,
+              type: 'smoothstep', // Use the 'smoothstep' edge type
+              animated: true, // Set animated to true
+            });
+          }
+        });
 
         const layoutedElements = getLayoutedElements(newNodes, newEdges);
         setNodes([...layoutedElements.nodes]);
@@ -102,3 +122,4 @@ const App = () => {
 };
 
 export default App;
+
