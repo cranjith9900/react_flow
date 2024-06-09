@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import ReactFlow, { Background, Controls, useNodesState, useEdgesState } from 'reactflow';
+// App.js
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import ReactFlow, { Background, Controls, useNodesState, useEdgesState, ReactFlowProvider } from 'reactflow';
 import 'reactflow/dist/style.css';
 import dagre from 'dagre';
+import Sidebar from './Sidebar';
 import './App.css';
 
 const dagreGraph = new dagre.graphlib.Graph();
@@ -50,8 +52,10 @@ const getLayoutedElements = (nodes, edges, direction = 'TB') => {
 };
 
 const App = () => {
+  const reactFlowWrapper = useRef(null);
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [reactFlowInstance, setReactFlowInstance] = useState(null);
 
   useEffect(() => {
     fetch('/app.json')
@@ -62,7 +66,6 @@ const App = () => {
         return response.json();
       })
       .then(data => {
-        // Extract nodes and create a mapping for unique node IDs
         const newNodes = [];
         const nodeIdMap = new Map();
 
@@ -76,7 +79,6 @@ const App = () => {
           });
         });
 
-        // Find the primary node and create edges
         const primaryNode = data.find(app => app.isPrimary);
         const primaryNodeId = nodeIdMap.get(primaryNode.appId);
         const newEdges = [];
@@ -88,8 +90,8 @@ const App = () => {
               id: `e-${primaryNodeId}-${targetId}`,
               source: primaryNodeId,
               target: targetId,
-              type: 'smoothstep', // Use the 'smoothstep' edge type
-              animated: true, // Set animated to true
+              type: 'smoothstep',
+              animated: true,
             });
           }
         });
@@ -101,25 +103,57 @@ const App = () => {
       .catch(error => console.error('Error fetching the JSON data:', error));
   }, []);
 
+  const onDragOver = useCallback((event) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }, []);
+
+  const onDrop = useCallback((event) => {
+    event.preventDefault();
+
+    const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
+    const type = event.dataTransfer.getData('application/reactflow');
+    const position = reactFlowInstance.project({
+      x: event.clientX - reactFlowBounds.left,
+      y: event.clientY - reactFlowBounds.top,
+    });
+
+    const newNode = {
+      id: `${type}-${+new Date()}`,
+      type,
+      position,
+      data: { label: `${type} node` },
+    };
+
+    setNodes((nds) => nds.concat(newNode));
+  }, [reactFlowInstance]);
+
   return (
     <div className="App">
       <h1>Interconnected Apps</h1>
-      <div className="flow-container">
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          fitView
-          style={{ width: '100%', height: 'calc(100vh - 100px)' }}
-        >
-          <Background />
-          <Controls />
-        </ReactFlow>
-      </div>
+      <ReactFlowProvider>
+        <div className="dndflow">
+          <Sidebar />
+          <div className="flow-container reactflow-wrapper" ref={reactFlowWrapper}>
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onInit={setReactFlowInstance}
+              onDrop={onDrop}
+              onDragOver={onDragOver}
+              fitView
+              className="inner"
+            >
+              <Background />
+              <Controls />
+            </ReactFlow>
+          </div>
+        </div>
+      </ReactFlowProvider>
     </div>
   );
 };
 
 export default App;
-
